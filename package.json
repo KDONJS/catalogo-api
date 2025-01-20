@@ -15,6 +15,10 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
+    "oauth2": "^0.0.1",
+    "passport": "^0.7.0",
+    "passport-azure-ad": "^4.3.5",
+    "passport-openidconnect": "^0.1.2",
     "sequelize": "^6.37.5",
     "sqlite3": "^5.1.7"
   },
