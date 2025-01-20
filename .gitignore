@@ -1,0 +1,47 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Directorios de bases de datos locales
+database.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+
+# Archivos de configuración y entorno
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Archivos de salida
+dist/
+build/
+coverage/
+*.map
+
+# Archivos de configuración de IDE y editores de texto
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Configuración de ESLint y Prettier
+.eslintcache
+.prettiercache
+
+# Dependencias de GitHub Actions y CI/CD
+.nyc_output/
+coverage/
