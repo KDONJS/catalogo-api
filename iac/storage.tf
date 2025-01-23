@@ -11,4 +11,6 @@ resource "kubernetes_persistent_volume_claim" "sqlite_pvc" {
       }
     }
   }
+
+  depends_on = [aws_eks_node_group.eks_nodes]
 }
