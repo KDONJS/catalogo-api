@@ -27,3 +27,7 @@ resource "aws_eks_node_group" "eks_nodes" {
     Name = "eks-node-group"
   }
 }
+
+data "aws_eks_cluster_auth" "eks" {
+  name = aws_eks_cluster.eks.name
+}
