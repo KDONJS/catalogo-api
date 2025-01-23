@@ -1,16 +1,7 @@
-resource "kubernetes_persistent_volume_claim" "sqlite_pvc" {
-  metadata {
-    name = "sqlite-pvc"
+resource "aws_ebs_volume" "sqlite_volume" {
+  availability_zone = "us-east-1a"
+  size              = var.volume_size
+  tags = {
+    Name = "sqlite_volume"
   }
-
-  spec {
-    access_modes = ["ReadWriteOnce"]
-    resources {
-      requests = {
-        storage = "1Gi"
-      }
-    }
-  }
-
-  depends_on = [aws_eks_node_group.eks_nodes]
 }
