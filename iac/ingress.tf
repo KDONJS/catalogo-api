@@ -3,7 +3,7 @@ resource "aws_lb" "eks_ingress_lb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.eks_sg.id]
-  subnets           = [aws_subnet.public.id]
+  subnets           = [aws_subnet.public.id, aws_subnet.private.id]
 }
 
 resource "aws_lb_listener" "http" {
