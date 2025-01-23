@@ -1,45 +1,37 @@
-resource "aws_vpc" "main" {
+resource "aws_vpc" "eks_vpc" {
   cidr_block = "10.0.0.0/16"
-  
+
   tags = {
-    Name = "MainVPC"
+    Name = "eks-vpc"
   }
 }
 
-resource "aws_subnet" "public" {
-  vpc_id                  = aws_vpc.main.id
+resource "aws_subnet" "eks_public_subnet_1" {
+  vpc_id                  = aws_vpc.eks_vpc.id
   cidr_block              = "10.0.1.0/24"
-  availability_zone       = "us-east-2a"  # Cambiado a una zona válida en us-east-2
+  availability_zone       = "us-east-2a"
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "PublicSubnet"
+    Name = "eks-public-subnet-1"
   }
 }
 
-resource "aws_security_group" "instance" {
-  name        = "instance_sg"
-  description = "Grupo de seguridad para la instancia EC2"
-  vpc_id      = aws_vpc.main.id
+resource "aws_subnet" "eks_public_subnet_2" {
+  vpc_id                  = aws_vpc.eks_vpc.id
+  cidr_block              = "10.0.2.0/24"
+  availability_zone       = "us-east-2b"
+  map_public_ip_on_launch = true
 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+  tags = {
+    Name = "eks-public-subnet-2"
   }
+}
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_internet_gateway" "eks_igw" {
+  vpc_id = aws_vpc.eks_vpc.id
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+  tags = {
+    Name = "eks-igw"
   }
 }
