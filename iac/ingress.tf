@@ -1,5 +1,5 @@
 resource "aws_lb" "eks_ingress_lb" {
-  name               = "eks-ingress-lb"
+  name               = "eks-ingress-lb-new"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.eks_sg.id]

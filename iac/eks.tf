@@ -49,20 +49,18 @@ data "aws_ami" "eks_worker" {
   }
 }
 
-# 🔹 Crear Node Group con configuración optimizada
 resource "aws_eks_node_group" "eks_nodes" {
   cluster_name    = aws_eks_cluster.eks_cluster.name
   node_group_name = "eks-nodes"
   node_role_arn   = aws_iam_role.eks_node_role.arn
-  subnet_ids      = [aws_subnet.public.id, aws_subnet.private.id]
-  
+  subnet_ids      = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+
   scaling_config {
     desired_size = 2
     min_size     = 1
     max_size     = 3
   }
 
-  # Usa la Launch Template configurada previamente
   launch_template {
     id      = aws_launch_template.eks_nodes.id
     version = "$Latest"
