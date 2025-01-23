@@ -2,7 +2,7 @@ resource "aws_instance" "app_instance" {
   ami                         = var.ami_id
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.public.id
-  security_groups             = [aws_security_group.instance.name]
+  vpc_security_group_ids      = [aws_security_group.instance.id]
   iam_instance_profile        = aws_iam_instance_profile.ec2_instance_profile.name
   associate_public_ip_address = true
 
@@ -21,10 +21,4 @@ resource "aws_instance" "app_instance" {
               mount /dev/xvdf /mnt/sqlite
               chown ec2-user:ec2-user /mnt/sqlite
               EOF
-}
-
-resource "aws_volume_attachment" "ebs_attachment" {
-  device_name = "/dev/xvdf"
-  volume_id   = aws_ebs_volume.sqlite_volume.id
-  instance_id = aws_instance.app_instance.id
 }
