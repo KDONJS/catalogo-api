@@ -10,6 +10,11 @@ dotenv.config();
 
 const app = express();
 app.use(bodyParser.json());
+
+app.get('/', (req, res) => {
+    res.send('¡API funcionando correctamente!');
+});
+
 app.use('/auth', authRoutes);
 app.use('/registros', registroRoutes);
 app.use('/api-tokens', apiTokenRoutes);
@@ -17,7 +22,7 @@ app.use('/api-tokens', apiTokenRoutes);
 const PORT = process.env.PORT || 3000;
 
 sequelize.sync().then(() => {
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
         console.log(`Servidor corriendo en http://localhost:${PORT}`);
     });
 }).catch(err => console.error('Error al conectar con la base de datos', err));

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: componente-catalogo-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: componente-catalogo-api
+  template:
+    metadata:
+      labels:
+        app: componente-catalogo-api
+    spec:
+      containers:
+        - name: componente-catalogo-api
+          image: 324037308545.dkr.ecr.us-east-2.amazonaws.com/develop/farmacias:1.0.0
+          ports:
+            - containerPort: 80
+          env:
+            - name: DB_PATH
+              value: "/app/data/database.sqlite"
+            - name: JWT_SECRET
+              value: "dgsfdgfd45454as5d45s4a5das45d456as4d545as4d54as54d"
+            - name: TOKEN_EXPIRATION
+              value: "1h"
+          volumeMounts:
+            - mountPath: "/app/data"
+              name: sqlite-storage
+      volumes:
+        - name: sqlite-storage
+          persistentVolumeClaim:
+            claimName: sqlite-pvc
+      imagePullSecrets:
+        - name: ecr-secret
