@@ -1,11 +1,14 @@
 variable "instance_type" {
-  default = "t2.micro"
+  description = "Tipo de instancia de AWS EC2"
+  default     = "t2.micro"
 }
 
 variable "ami_id" {
-  default = "ami-0c55b159cbfafe1f0"
+  description = "ID de la AMI a usar en AWS EC2"
+  default     = "ami-0c55b159cbfafe1f0"
 }
 
 variable "volume_size" {
-  default = 10
+  description = "Tamaño del volumen EBS en GB"
+  default     = 10
 }

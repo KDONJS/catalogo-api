@@ -16,9 +16,11 @@ resource "aws_instance" "app_instance" {
               yum install -y httpd
               systemctl start httpd
               systemctl enable httpd
-              mkfs -t ext4 /dev/xvdf
+
+              DEVICE_NAME=$(lsblk -nd --output NAME | grep nvme || echo xvdf)
+              mkfs -t ext4 /dev/$DEVICE_NAME
               mkdir /mnt/sqlite
-              mount /dev/xvdf /mnt/sqlite
+              mount /dev/$DEVICE_NAME /mnt/sqlite
               chown ec2-user:ec2-user /mnt/sqlite
               EOF
 }
