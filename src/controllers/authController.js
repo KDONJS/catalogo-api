@@ -23,9 +23,39 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     const { username, password } = req.body;
     const user = await Usuario.findOne({ where: { username } });
+
     if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.status(400).json({ message: 'Credenciales inválidas' });
     }
+
     const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRATION });
-    res.json({ token });
+
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 3600000
+    });
+
+    res.json({ message: 'Login exitoso', user: { id: user.id, username: user.username } });
+};
+
+exports.session = (req, res) => {
+    const token = req.cookies.token;
+
+    if (!token) {
+        return res.status(401).json({ message: 'No autenticado' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        res.json({ user: { id: decoded.id, username: decoded.username } });
+    } catch (error) {
+        return res.status(401).json({ message: 'Token inválido', error });
+    }
+};
+
+exports.logout = (req, res) => {
+    res.clearCookie('token'); // 🔹 Eliminamos la cookie del cliente
+    res.json({ message: 'Logout exitoso' });
 };

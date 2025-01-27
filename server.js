@@ -9,27 +9,29 @@ const apiTokenRoutes = require('./src/routes/apiTokenRoutes');
 const podVersionRoutes = require('./src/routes/podVersionRoutes');
 const awsSsoRoutes = require('./src/routes/awsSsoRoutes');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 dotenv.config();
 
-const app = express(); // ✅ Aquí se inicializa `app`
+const app = express(); // ✅ Inicializa la app correctamente
 
-app.use(cors()); // ✅ Ahora sí podemos usar `app.use(cors());`
-
-app.use(bodyParser.json());
-
-app.get('/', (req, res) => {
-    res.send('¡API funcionando correctamente!');
-});
-
-// Configuración de CORS más detallada
+// 🔹 ✅ Configura CORS correctamente (antes de definir las rutas)
 app.use(cors({
-    origin: 'http://localhost:4200',
+    origin: 'http://localhost:4200', // ⚠️ No uses '*', especifica el origen del frontend
+    credentials: true,  // ⚠️ Necesario para permitir cookies y autenticación basada en credenciales
     methods: 'GET,POST,PUT,DELETE',
     allowedHeaders: 'Content-Type,Authorization'
 }));
 
-// Definición de rutas
+app.use(bodyParser.json());
+app.use(cookieParser()); // ✅ Necesario para manejar cookies
+
+// Rutas públicas
+app.get('/', (req, res) => {
+    res.send('¡API funcionando correctamente!');
+});
+
+// 🔹 ✅ Define las rutas DESPUÉS de configurar CORS
 app.use('/auth', authRoutes);
 app.use('/registros', registroRoutes);
 app.use('/api-tokens', apiTokenRoutes);

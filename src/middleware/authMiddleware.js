@@ -1,15 +1,17 @@
 const jwt = require('jsonwebtoken');
 
 const authenticateToken = (req, res, next) => {
-    const authHeader = req.header('Authorization');
-    if (!authHeader) return res.status(401).json({ message: 'Acceso denegado' });
+    const token = req.cookies.token; // 🔥 Obtener token desde la cookie
 
-    const token = authHeader.split(' ')[1]; // Obtiene solo el token
-    if (!token) return res.status(401).json({ message: 'Acceso denegado' });
+    if (!token) {
+        return res.status(401).json({ message: 'Acceso denegado. No hay token en la cookie.' });
+    }
 
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ message: 'Token inválido' });
-        req.user = user;
+        if (err) {
+            return res.status(403).json({ message: 'Token inválido' });
+        }
+        req.user = user; // ✅ Guardar usuario autenticado en `req.user`
         next();
     });
 };
