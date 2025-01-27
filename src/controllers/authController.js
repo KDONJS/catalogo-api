@@ -10,10 +10,18 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const TOKEN_EXPIRATION = process.env.TOKEN_EXPIRATION || '1h';
 
 exports.register = async (req, res) => {
-    const { username, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const { username, password, role, nombre, apellidos, email } = req.body;
     try {
-        const user = await Usuario.create({ id: uuidv4(), username, password: hashedPassword });
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = await Usuario.create({
+            id: uuidv4(),
+            username,
+            password: hashedPassword,
+            role,
+            nombre,
+            apellidos,
+            email
+        });
         res.json({ message: 'Usuario registrado', user });
     } catch (error) {
         res.status(400).json({ message: 'Error al registrar usuario', error });
