@@ -6,11 +6,11 @@ const { authenticateToken } = require('../middleware/authMiddleware');
 const upload = multer({ dest: 'uploads/' });
 const router = express.Router();
 
-router.post('/',  createRegistro);
+router.post('/', authenticateToken,  createRegistro);
 router.get('/', authenticateToken, getRegistros);
-router.get('/:id',  getRegistroById);
-router.put('/:id',  updateRegistro);
-router.delete('/:id',  deleteRegistro);
-router.post('/upload', upload.single('file'), uploadExcel);
+router.get('/:id', authenticateToken,  getRegistroById);
+router.put('/:id', authenticateToken,  updateRegistro);
+router.delete('/:id', authenticateToken,  deleteRegistro);
+router.post('/upload', authenticateToken, upload.single('file'), uploadExcel);
 
 module.exports = router;
