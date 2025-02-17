@@ -1,9 +1,6 @@
 const axios = require('axios');
 const ClusterSource = require('../models/ClusterSource');
 
-// 📌 Objeto en memoria para almacenar los datos recolectados
-//const collectedData = {};
-
 /**
  * 🔹 Registrar una nueva fuente de datos en la BD
  */
