@@ -10,6 +10,7 @@ const registroRoutes = require('./src/routes/registroRoutes');
 const apiTokenRoutes = require('./src/routes/apiTokenRoutes');
 const podVersionRoutes = require('./src/routes/podVersionRoutes');
 const awsSsoRoutes = require('./src/routes/awsSsoRoutes');
+const clusterRoutes = require('./src/routes/clusterRoutes');
 
 // Cargar variables de entorno y validar que existan
 dotenv.config();
@@ -53,6 +54,7 @@ app.use('/registros', registroRoutes);
 app.use('/api-tokens', apiTokenRoutes);
 app.use('/pod-versions', podVersionRoutes);
 app.use('/aws-sso', awsSsoRoutes);
+app.use('/clusters', clusterRoutes);
 
 // 🔹 ✅ Middleware de manejo de errores global
 app.use((err, req, res, next) => {
