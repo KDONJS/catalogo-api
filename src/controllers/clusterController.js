@@ -1,5 +1,6 @@
 const axios = require('axios');
 const ClusterSource = require('../models/ClusterSource');
+const { Op } = require('sequelize');
 
 /**
  * 🔹 Registrar una nueva fuente de datos en la BD
@@ -41,8 +42,74 @@ exports.getSources = async (req, res) => {
     }
 };
 
+
+
 /**
- * 🔹 Recolectar datos de todas las fuentes registradas
+ * 🔹 Editar una fuente de datos existente en la BD
+ */
+exports.updateSource = async (req, res) => {
+    try {
+        const { id } = req.params; // ID de la fuente a actualizar
+        const { clusterName, url } = req.body;
+
+        if (!clusterName || !url) {
+            return res.status(400).json({ message: "❌ clusterName y url son obligatorios" });
+        }
+
+        // Verificar si la fuente existe
+        const source = await ClusterSource.findByPk(id);
+        if (!source) {
+            return res.status(404).json({ message: "❌ Fuente de datos no encontrada" });
+        }
+
+        // Verificar si el clusterName ya está en uso por otro registro
+        const existingSource = await ClusterSource.findOne({
+            where: {
+                clusterName,
+                id: { [Op.ne]: id } // ✅ Corregido para SQLite
+            }
+        });
+
+        if (existingSource) {
+            return res.status(400).json({ message: "❌ Ya existe una fuente con este nombre de cluster" });
+        }
+
+        // Actualizar la fuente en la base de datos
+        await source.update({ clusterName, url });
+
+        res.json({ message: `✅ Fuente ${clusterName} actualizada correctamente` });
+    } catch (error) {
+        console.error('❌ Error al actualizar la fuente:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+
+/**
+ * 🔹 Eliminar una fuente de datos en la BD
+ */
+exports.deleteSource = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Verificar si la fuente existe
+        const source = await ClusterSource.findByPk(id);
+        if (!source) {
+            return res.status(404).json({ message: "❌ Fuente de datos no encontrada" });
+        }
+
+        // Eliminar la fuente
+        await source.destroy();
+
+        res.json({ message: `✅ Fuente ${source.clusterName} eliminada correctamente` });
+    } catch (error) {
+        console.error('❌ Error al eliminar la fuente:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+
+
+/**
+ * 🔹 Recolectar datos de todas las fuentes registradas con una URL base tomada de la primera fuente
  */
 exports.collectData = async (req, res) => {
     try {
@@ -53,16 +120,22 @@ exports.collectData = async (req, res) => {
         }
 
         console.log(`📌 Se encontraron ${sources.length} fuentes registradas.`);
+
+        // Obtener la URL base de la primera fuente registrada
+        const BASE_URL = sources[0].url;
+        console.log(`🔗 Usando URL base: ${BASE_URL}`);
+
         const clusterData = {};
 
         const clusterPromises = sources.map(async (source) => {
-            console.log(`🔍 Obteniendo datos del cluster: ${source.clusterName} desde ${source.url}`);
+            const requestUrl = `${BASE_URL}/kubernetes/pods`;
+            console.log(`🔍 Obteniendo datos del cluster: ${source.clusterName} desde ${requestUrl}`);
 
             try {
-                const response = await axios.get(source.url);
+                const response = await axios.get(requestUrl);
                 const rawData = response.data;
 
-                console.log(`📌 Datos obtenidos desde ${source.url}:`, rawData);
+                console.log(`📌 Datos obtenidos desde ${requestUrl}:`, rawData);
 
                 // Procesar cada clave en la respuesta (cada componente será una clave en el objeto)
                 Object.keys(rawData).forEach(componentName => {
@@ -129,23 +202,28 @@ exports.collectData = async (req, res) => {
 
 
 /**
- * 🔹 Proxy para obtener datos del cluster sin modificar su estructura.
+ * 🔹 Proxy para obtener datos del cluster sin modificar su estructura, usando la primera URL registrada.
  */
 exports.getClusterData = async (req, res) => {
     const { clusterName } = req.params;
 
     try {
-        // Buscar la URL del cluster en la base de datos
-        const source = await ClusterSource.findOne({ where: { clusterName } });
+        // Obtener la primera fuente registrada en la base de datos
+        const sources = await ClusterSource.findAll();
 
-        if (!source) {
-            return res.status(404).json({ message: `❌ No se encontró la URL para el cluster ${clusterName}` });
+        if (!sources.length) {
+            return res.status(500).json({ message: "❌ No hay fuentes registradas en la base de datos." });
         }
 
-        console.log(`🔍 Redirigiendo la solicitud a: ${source.url}`);
+        const BASE_URL = sources[0].url; // ✅ Se usa la primera URL
+        console.log(`🔗 Usando URL base: ${BASE_URL}`);
 
-        // Hacer la solicitud a la URL registrada
-        const response = await axios.get(source.url);
+        // Construir la URL del cluster con la base dinámica
+        const requestUrl = `${BASE_URL}/kubernetes/pods`;
+        console.log(`🔍 Redirigiendo la solicitud a: ${requestUrl}`);
+
+        // Hacer la solicitud a la URL construida
+        const response = await axios.get(requestUrl);
 
         // Enviar la respuesta original sin modificar
         res.json(response.data);
@@ -154,3 +232,36 @@ exports.getClusterData = async (req, res) => {
         res.status(500).json({ message: `Error al obtener datos del cluster ${clusterName}` });
     }
 };
+
+/**
+ * 🔹 Proxy para obtener datos de un componente específico dentro de un cluster, usando la primera URL registrada.
+ */
+exports.getClusterDataComponente = async (req, res) => {
+    const { clusterName, componente } = req.params; // ✅ Capturar los dos parámetros
+
+    try {
+        // Obtener la primera fuente registrada en la base de datos
+        const sources = await ClusterSource.findAll();
+
+        if (!sources.length) {
+            return res.status(500).json({ message: "❌ No hay fuentes registradas en la base de datos." });
+        }
+
+        const BASE_URL = sources[0].url; // ✅ Se usa la primera URL
+        console.log(`🔗 Usando URL base: ${BASE_URL}`);
+
+        // Construir la URL para obtener los datos del componente dentro del cluster
+        const requestUrl = `${BASE_URL}/kubernetes/pods/componentName/${componente}`;
+        console.log(`🔍 Redirigiendo la solicitud a: ${requestUrl}`);
+
+        // Hacer la solicitud a la URL construida
+        const response = await axios.get(requestUrl);
+
+        // Enviar la respuesta original sin modificar
+        res.json(response.data);
+    } catch (error) {
+        console.error(`❌ Error al obtener datos de ${componente} en el cluster ${clusterName}:`, error.message);
+        res.status(500).json({ message: `Error al obtener datos del componente ${componente} en el cluster ${clusterName}` });
+    }
+};
+
