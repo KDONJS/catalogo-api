@@ -44,7 +44,6 @@ exports.getSources = async (req, res) => {
 /**
  * 🔹 Recolectar datos de todas las fuentes registradas
  */
-
 exports.collectData = async (req, res) => {
     try {
         const sources = await ClusterSource.findAll();
@@ -65,45 +64,50 @@ exports.collectData = async (req, res) => {
 
                 console.log(`📌 Datos obtenidos desde ${source.url}:`, rawData);
 
-                // Extraer la clave correspondiente (Ejemplo: "clusterGCP", "clusterAWS", "clusterAzure")
-                const clusterKey = Object.keys(rawData)[0]; // Se asume que hay solo una clave en la respuesta
-                const clusterComponents = rawData[clusterKey];
+                // Procesar cada clave en la respuesta (cada componente será una clave en el objeto)
+                Object.keys(rawData).forEach(componentName => {
+                    const replicas = rawData[componentName];
 
-                if (!Array.isArray(clusterComponents)) {
-                    console.warn(`⚠️ La clave ${clusterKey} no contiene un array de componentes.`);
-                    return;
-                }
+                    if (!Array.isArray(replicas)) {
+                        console.warn(`⚠️ La clave ${componentName} no contiene un array de pods.`);
+                        return;
+                    }
 
-                clusterData[source.clusterName] = clusterComponents.map(component => ({
-                    componentName: component.componentName,
-                    replicas: component.replicas.map(replica => ({
-                        name: replica.name,
-                        namespace: replica.namespace,
-                        status: replica.status,
-                        startTime: replica.startTime,
-                        conditions: replica.conditions || [],
-                        nodeName: replica.nodeName || "No asignado",
-                        podIP: replica.podIP || "No asignado",
-                        nodeIP: replica.nodeIP || "No asignado",
-                        restartCount: replica.restartCount || 0,
-                        cpuUsage: replica.cpuUsage || "0 mCPU",
-                        memoryUsage: replica.memoryUsage || "0 MiB",
-                        containers: (replica.containers || []).map(container => ({
-                            name: container.name,
-                            image: container.image,
-                            version: container.version,
-                            resources: {
-                                requests: container.resources?.requests || { cpu: "No definido", memory: "No definido" },
-                                limits: container.resources?.limits || { cpu: "No definido", memory: "No definido" }
-                            }
-                        })),
-                        volumes: (replica.volumes || []).map(volume => ({
-                            name: volume.name,
-                            persistentVolumeClaim: volume.persistentVolumeClaim || "N/A"
-                        })),
-                        events: replica.events || []
-                    }))
-                }));
+                    if (!clusterData[source.clusterName]) {
+                        clusterData[source.clusterName] = [];
+                    }
+
+                    clusterData[source.clusterName].push({
+                        componentName,
+                        replicas: replicas.map(replica => ({
+                            name: replica.name,
+                            namespace: replica.namespace,
+                            status: replica.status,
+                            startTime: replica.startTime,
+                            conditions: replica.conditions || [],
+                            nodeName: replica.nodeName || "No asignado",
+                            podIP: replica.podIP || "No asignado",
+                            nodeIP: replica.nodeIP || "No asignado",
+                            restartCount: replica.restartCount || 0,
+                            cpuUsage: replica.cpuUsage || "0 mCPU",
+                            memoryUsage: replica.memoryUsage || "0 MiB",
+                            containers: (replica.containers || []).map(container => ({
+                                name: container.name,
+                                image: container.image,
+                                version: container.version,
+                                resources: {
+                                    requests: container.resources?.requests || { cpu: "No definido", memory: "No definido" },
+                                    limits: container.resources?.limits || { cpu: "No definido", memory: "No definido" }
+                                }
+                            })),
+                            volumes: (replica.volumes || []).map(volume => ({
+                                name: volume.name,
+                                persistentVolumeClaim: volume.persistentVolumeClaim || "N/A"
+                            })),
+                            events: replica.events || []
+                        }))
+                    });
+                });
 
                 console.log(`✅ Datos procesados correctamente para ${source.clusterName}`);
 
