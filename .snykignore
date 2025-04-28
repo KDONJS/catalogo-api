@@ -1,0 +1,8 @@
+# Ignorar carpetas de pruebas
+utils/**
+utils/config/**
+utils/iac/**
+
+# Ignorar archivos específicos de pruebas
+**/*.tf
+**/*.yaml

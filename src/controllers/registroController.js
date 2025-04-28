@@ -37,29 +37,23 @@ exports.deleteRegistro = async (req, res) => {
 
 exports.uploadExcel = async (req, res) => {
     try {
+        // 1) ¿llegó archivo?
         if (!req.file) {
             return res.status(400).json({ message: 'No se ha subido ningún archivo' });
         }
-
-        // Validate file extension
-        const fileExtension = path.extname(req.file.originalname).toLowerCase();
-        if (!['.xlsx', '.xls'].includes(fileExtension)) {
-            return res.status(400).json({ message: 'El archivo debe ser un Excel (.xlsx o .xls)' });
+  
+        // 2) Validar extensión - solo .xlsx
+        const ext = (req.file.originalname.split('.').pop() || '').toLowerCase();
+        if (ext !== 'xlsx') {
+            return res.status(400).json({ message: 'El archivo debe ser un Excel (.xlsx)' });
         }
-
-        // Safely resolve the file path to prevent path traversal
-        const filePath = path.resolve(req.file.path);
-        
-        // Verify the file exists
-        if (!fs.existsSync(filePath)) {
-            return res.status(400).json({ message: 'El archivo no existe' });
-        }
-
-        const workbook = xlsx.readFile(filePath);
+  
+        // 3) Parsear workbook desde el buffer (⚠️ sin rutas)
+        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
         const sheetName = workbook.SheetNames[0];
-        const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-        const registros = await Promise.all(data.map(async (row) => {
+        const rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+  
+        const registros = await Promise.all(rows.map(async (row) => {
             return await Registro.create({
                 id: uuidv4(),
                 nombrePod: row['NOMBRE POD EN EKS'],
@@ -81,13 +75,8 @@ exports.uploadExcel = async (req, res) => {
             });
         }));
 
-        // Optionally, clean up the temporary file after processing
-        try {
-            fs.unlinkSync(filePath);
-        } catch (cleanupError) {
-            console.error('Error al eliminar el archivo temporal:', cleanupError);
-        }
-
+        // Ya no es necesario eliminar archivos temporales porque estamos usando buffer
+        
         res.json({ message: 'Datos subidos correctamente', registros });
     } catch (error) {
         console.error('Error al subir el archivo:', error);
