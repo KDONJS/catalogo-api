@@ -1,6 +1,8 @@
 const xlsx = require('xlsx');
 const Registro = require('../models/Registro');
 const { v4: uuidv4 } = require('uuid');
+const path = require('path');
+const fs = require('fs');
 
 
 exports.createRegistro = async (req, res) => {
@@ -39,7 +41,21 @@ exports.uploadExcel = async (req, res) => {
             return res.status(400).json({ message: 'No se ha subido ningún archivo' });
         }
 
-        const workbook = xlsx.readFile(req.file.path);
+        // Validate file extension
+        const fileExtension = path.extname(req.file.originalname).toLowerCase();
+        if (!['.xlsx', '.xls'].includes(fileExtension)) {
+            return res.status(400).json({ message: 'El archivo debe ser un Excel (.xlsx o .xls)' });
+        }
+
+        // Safely resolve the file path to prevent path traversal
+        const filePath = path.resolve(req.file.path);
+        
+        // Verify the file exists
+        if (!fs.existsSync(filePath)) {
+            return res.status(400).json({ message: 'El archivo no existe' });
+        }
+
+        const workbook = xlsx.readFile(filePath);
         const sheetName = workbook.SheetNames[0];
         const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
@@ -64,6 +80,13 @@ exports.uploadExcel = async (req, res) => {
                 fase: row['Fase']
             });
         }));
+
+        // Optionally, clean up the temporary file after processing
+        try {
+            fs.unlinkSync(filePath);
+        } catch (cleanupError) {
+            console.error('Error al eliminar el archivo temporal:', cleanupError);
+        }
 
         res.json({ message: 'Datos subidos correctamente', registros });
     } catch (error) {
