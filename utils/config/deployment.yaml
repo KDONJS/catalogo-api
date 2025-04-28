@@ -1,112 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: componente-catalogo-api
-  labels:
-    app: componente-catalogo-api
+  name: catalogo-componentes
+  namespace: develop
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: componente-catalogo-api
+      app: catalogo-componentes
   template:
     metadata:
       labels:
-        app: componente-catalogo-api
+        app: catalogo-componentes
     spec:
       containers:
-        - name: componente-catalogo-api
-          image: 324037308545.dkr.ecr.us-east-2.amazonaws.com/develop/farmacias:1.0.0
-          ports:
-            - containerPort: 3000
-          env:
-            - name: DB_PATH
-              value: "/app/data/database.sqlite"
-            - name: JWT_SECRET
-              value: "dgsfdgfd45454as5d45s4a5das45d456as4d545as4d54as54d"
-            - name: TOKEN_EXPIRATION
-              value: "1h"
-            - name: PORT
-              value: "3000"
-          volumeMounts:
-            - mountPath: "/app/data"
-              name: sqlite-storage
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 3000
-            initialDelaySeconds: 10
-            periodSeconds: 5
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 5
-      volumes:
-        - name: sqlite-storage
-          persistentVolumeClaim:
-            claimName: sqlite-pvc
-      imagePullSecrets:
-        - name: ecr-secret
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: componente-catalogo-api-service
-spec:
-  selector:
-    app: componente-catalogo-api
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 3000
-  type: ClusterIP
-
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: componente-catalogo-api-ingress
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-spec:
-  ingressClassName: nginx
-  rules:
-  - host: catalogo-api.luciel.online
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: componente-catalogo-api-service
-            port:
-              number: 80
-
----
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: componente-catalogo-api-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: componente-catalogo-api
-  minReplicas: 2
-  maxReplicas: 5
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 80
+      - name: catalogo-componentes
+        image: kdonjs/catalogo:1.0.5
+        ports:
+        - containerPort: 3200
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+        env:
+          - name: DB_PATH
+            value: "/app/data/database.sqlite"
+          - name: JWT_SECRET
+            value: "dgsfdgfd45454as5d45s4a5das45d456as4d545as4d54as54d"
+          - name: TOKEN_EXPIRATION
+            value: "1h"
+          - name: PORT
+            value: "3200"

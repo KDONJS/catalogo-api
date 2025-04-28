@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const { v4: uuidv4 } = require('uuid');
 const Usuario = require('../models/Usuario');
+const SystemConfig = require('../models/SystemConfig');
 
 dotenv.config();
 
@@ -12,17 +13,40 @@ const TOKEN_EXPIRATION = process.env.TOKEN_EXPIRATION || '1h';
 exports.register = async (req, res) => {
     const { username, password, role, nombre, apellidos, email } = req.body;
     try {
+        // Verificar si el sistema está inicializado
+        const setupConfig = await SystemConfig.findOne({ where: { key: 'system_initialized' } });
+        const isInitialized = setupConfig && setupConfig.value === 'true';
+        
+        // Si el sistema está inicializado y el usuario no está autenticado o no es admin
+        if (isInitialized && (!req.user || req.user.role !== 'admin')) {
+            return res.status(403).json({ 
+                message: 'No tiene permisos para registrar usuarios' 
+            });
+        }
+        
+        // Si el sistema no está inicializado, el primer usuario debe ser admin
+        const userRole = !isInitialized ? 'admin' : (role || 'user');
+        
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await Usuario.create({
             id: uuidv4(),
             username,
             password: hashedPassword,
-            role,
+            role: userRole,
             nombre,
             apellidos,
             email,
             estado: true
         });
+        
+        // Si es el primer usuario, marcar el sistema como inicializado
+        if (!isInitialized) {
+            await SystemConfig.create({
+                key: 'system_initialized',
+                value: 'true'
+            });
+        }
+        
         res.json({ message: 'Usuario registrado', user });
     } catch (error) {
         res.status(400).json({ message: 'Error al registrar usuario', error });

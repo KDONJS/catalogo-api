@@ -265,3 +265,81 @@ exports.getClusterDataComponente = async (req, res) => {
     }
 };
 
+/**
+ * 🔹 Proxy para escalar deployments usando la primera URL registrada.
+ */
+exports.proxyScaleDeployment = async (req, res) => {
+    const { namespace, deploymentName } = req.params;
+    const { replicas } = req.body;
+
+    try {
+        // Validar el número de réplicas
+        if (!replicas || isNaN(replicas) || replicas < 0) {
+            return res.status(400).json({
+                message: "❌ El número de réplicas debe ser un número entero positivo"
+            });
+        }
+
+        // Obtener la primera fuente registrada en la base de datos
+        const sources = await ClusterSource.findAll();
+
+        if (!sources.length) {
+            return res.status(500).json({ message: "❌ No hay fuentes registradas en la base de datos." });
+        }
+
+        const BASE_URL = sources[0].url; // ✅ Se usa la primera URL
+        console.log(`🔗 Usando URL base: ${BASE_URL}`);
+
+        // Construir la URL para escalar el deployment
+        const requestUrl = `${BASE_URL}/kubernetes/deployments/${namespace}/${deploymentName}/scale`;
+        console.log(`🔍 Redirigiendo la solicitud a: ${requestUrl}`);
+
+        // Hacer la solicitud a la URL construida
+        const response = await axios.patch(requestUrl, { replicas: parseInt(replicas) });
+
+        // Enviar la respuesta original sin modificar
+        res.json(response.data);
+    } catch (error) {
+        console.error(`❌ Error al escalar deployment ${deploymentName} en namespace ${namespace}:`, error.message);
+        res.status(500).json({ 
+            message: `Error al escalar el deployment ${deploymentName}`, 
+            error: error.message 
+        });
+    }
+};
+
+/**
+ * 🔹 Proxy para eliminar pods usando la primera URL registrada.
+ */
+exports.proxyDeletePod = async (req, res) => {
+    const { namespace, podName } = req.params;
+
+    try {
+        // Obtener la primera fuente registrada en la base de datos
+        const sources = await ClusterSource.findAll();
+
+        if (!sources.length) {
+            return res.status(500).json({ message: "❌ No hay fuentes registradas en la base de datos." });
+        }
+
+        const BASE_URL = sources[0].url; // ✅ Se usa la primera URL
+        console.log(`🔗 Usando URL base: ${BASE_URL}`);
+
+        // Construir la URL para eliminar el pod
+        const requestUrl = `${BASE_URL}/kubernetes/pods/${namespace}/${podName}`;
+        console.log(`🔍 Redirigiendo la solicitud a: ${requestUrl}`);
+
+        // Hacer la solicitud a la URL construida
+        const response = await axios.delete(requestUrl);
+
+        // Enviar la respuesta original sin modificar
+        res.json(response.data);
+    } catch (error) {
+        console.error(`❌ Error al eliminar pod ${podName} en namespace ${namespace}:`, error.message);
+        res.status(500).json({ 
+            message: `Error al eliminar el pod ${podName}`, 
+            error: error.message 
+        });
+    }
+};
+

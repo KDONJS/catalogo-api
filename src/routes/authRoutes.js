@@ -1,9 +1,10 @@
 const express = require('express');
-const {     register, login, session, logout, getUsuarios, getUsuarioById, updateUsuario, deleteUsuario, toggleEstadoUsuario } = require('../controllers/authController');
+const { register, login, session, logout, getUsuarios, getUsuarioById, updateUsuario, deleteUsuario, toggleEstadoUsuario } = require('../controllers/authController');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { authenticateToken, conditionalAuthMiddleware } = require('../middleware/authMiddleware');
 
-router.post('/register', authenticateToken , register);
+// Usamos el middleware condicional para el registro
+router.post('/register', conditionalAuthMiddleware, register);
 router.post('/login', login);
 router.get('/session', session);
 router.post('/logout', logout);
