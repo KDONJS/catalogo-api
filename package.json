@@ -26,7 +26,7 @@
     "passport": "^0.7.0",
     "passport-azure-ad": "^4.3.5",
     "passport-openidconnect": "^0.1.2",
-    "sequelize": "^6.37.5",
+    "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7",
     "xlsx": "npm:@e965/xlsx@^0.20.3"
   },
