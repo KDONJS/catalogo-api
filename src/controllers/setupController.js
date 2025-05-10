@@ -45,12 +45,12 @@ exports.setupAdmin = async (req, res) => {
         }
         
         // Validar datos del administrador
-        const { username, password, nombre, apellidos, email } = req.body;
+        const { username, password, nombre, apellidos, email, departamento, cargo, telefono } = req.body;
         
-        if (!username || !password || !nombre || !apellidos || !email) {
+        if (!username || !password || !nombre || !apellidos || !email || !departamento || !cargo || !telefono) {
             await transaction.rollback();
             return res.status(400).json({ 
-                message: 'Todos los campos son obligatorios: username, password, nombre, apellidos, email' 
+                message: 'Todos los campos son obligatorios: username, password, nombre, apellidos, email, departamento, cargo, telefono' 
             });
         }
         
@@ -64,6 +64,9 @@ exports.setupAdmin = async (req, res) => {
             nombre,
             apellidos,
             email,
+            departamento,
+            cargo,
+            telefono,
             estado: true
         }, { transaction });
         

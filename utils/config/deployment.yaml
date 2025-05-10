@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: catalogo-componentes
-        image: kdonjs/catalogo:1.0.5
+        image: kdonjs/catalogo:1.0.6
         ports:
         - containerPort: 3200
         resources:

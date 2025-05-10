@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const { sequelize } = require('./src/config/database');
+const path = require('path');
 
 // Importación de rutas
 const authRoutes = require('./src/routes/authRoutes');
@@ -26,7 +27,7 @@ if (missingVars.length > 0) {
 const app = express();
 
 // 🔹 ✅ CORS con múltiples orígenes dinámicos
-const allowedOrigins = ['http://localhost:4200', 'https://miapp.com'];
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:4200', 'https://miapp.com'];
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) {
@@ -44,9 +45,12 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Configurar directorio para archivos estáticos
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Rutas públicas
 app.get('/', (req, res) => {
-    res.send('¡API funcionando correctamente!');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // 🔹 ✅ Define las rutas DESPUÉS de configurar middlewares

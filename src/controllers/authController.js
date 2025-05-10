@@ -11,22 +11,24 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const TOKEN_EXPIRATION = process.env.TOKEN_EXPIRATION || '1h';
 
 exports.register = async (req, res) => {
-    const { username, password, role, nombre, apellidos, email } = req.body;
+    const { username, password, role, nombre, apellidos, email, departamento, cargo, telefono } = req.body;
+
     try {
-        // Verificar si el sistema está inicializado
         const setupConfig = await SystemConfig.findOne({ where: { key: 'system_initialized' } });
         const isInitialized = setupConfig && setupConfig.value === 'true';
-        
-        // Si el sistema está inicializado y el usuario no está autenticado o no es admin
+
+        console.log('📦 ¿Sistema inicializado?:', isInitialized);
+        console.log('👤 req.user:', req.user);
+
         if (isInitialized && (!req.user || req.user.role !== 'admin')) {
+            console.log('⛔ Usuario no autorizado para registrar. Role:', req.user?.role);
             return res.status(403).json({ 
                 message: 'No tiene permisos para registrar usuarios' 
             });
         }
-        
-        // Si el sistema no está inicializado, el primer usuario debe ser admin
+
         const userRole = !isInitialized ? 'admin' : (role || 'user');
-        
+
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await Usuario.create({
             id: uuidv4(),
@@ -36,25 +38,31 @@ exports.register = async (req, res) => {
             nombre,
             apellidos,
             email,
+            departamento,
+            cargo,
+            telefono,
             estado: true
         });
-        
-        // Si es el primer usuario, marcar el sistema como inicializado
+
         if (!isInitialized) {
             await SystemConfig.create({
                 key: 'system_initialized',
                 value: 'true'
             });
         }
-        
+
+        console.log('✅ Usuario registrado correctamente:', user.username);
         res.json({ message: 'Usuario registrado', user });
+
     } catch (error) {
+        console.error('❌ Error al registrar usuario:', error);
         res.status(400).json({ message: 'Error al registrar usuario', error });
     }
 };
 
 exports.login = async (req, res) => {
     const { username, password } = req.body;
+
     const user = await Usuario.findOne({ where: { username } });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -66,16 +74,36 @@ exports.login = async (req, res) => {
         return res.status(403).json({ message: 'Usuario desactivado. No puede iniciar sesión.' });
     }
 
-    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRATION });
+    // ✅ Agregamos el `role` al token para futuras validaciones
+    const token = jwt.sign(
+        {
+            id: user.id,
+            username: user.username,
+            role: user.role, // 👈 clave para autorización
+        },
+        JWT_SECRET,
+        { expiresIn: TOKEN_EXPIRATION }
+    );
 
+    // ✅ Seteamos cookie con el token
     res.cookie('token', token, {
         httpOnly: true,
-        secure: false,
+        secure: false, // cambia a true si usas HTTPS
         sameSite: 'lax',
-        maxAge: 3600000
+        maxAge: 3600000 // 1 hora
     });
 
-    res.json({ message: 'Login exitoso', user: { id: user.id, username: user.username } });
+    // ✅ Incluye el `role` en la respuesta JSON también
+    res.json({
+        message: 'Login exitoso',
+        user: {
+            id: user.id,
+            username: user.username,
+            role: user.role,
+            nombre: user.nombre,
+            email: user.email
+        }
+    });
 };
 
 exports.session = (req, res) => {

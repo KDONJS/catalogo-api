@@ -2,36 +2,46 @@ const jwt = require('jsonwebtoken');
 const SystemConfig = require('../models/SystemConfig');
 
 const authenticateToken = (req, res, next) => {
-    const token = req.cookies.token; // 🔥 Obtener token desde la cookie
+    const tokenFromCookie = req.cookies?.token;
+    const tokenFromHeader = req.headers?.authorization?.split(' ')[1];
+
+    console.log('🔐 Token desde cookie:', tokenFromCookie);
+    console.log('🔐 Token desde header:', tokenFromHeader);
+
+    const token = tokenFromCookie || tokenFromHeader;
 
     if (!token) {
-        return res.status(401).json({ message: 'Acceso denegado. No hay token en la cookie.' });
+        console.log('❌ No se encontró token');
+        return res.status(401).json({ message: 'Acceso denegado. No hay token' });
     }
 
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) {
+            console.log('❌ Token inválido:', err.message);
             return res.status(403).json({ message: 'Token inválido' });
         }
-        req.user = user; // ✅ Guardar usuario autenticado en `req.user`
+
+        console.log('✅ Token verificado. Usuario decodificado:', user);
+        req.user = user;
         next();
     });
 };
 
-// Middleware condicional que verifica si el sistema está inicializado
 const conditionalAuthMiddleware = async (req, res, next) => {
     try {
-        // Verificar si el sistema ya está inicializado
         const setupConfig = await SystemConfig.findOne({ where: { key: 'system_initialized' } });
-        
-        // Si el sistema ya está inicializado, requerir autenticación
+
+        console.log('⚙️ Configuración de sistema encontrada:', setupConfig?.value);
+
         if (setupConfig && setupConfig.value === 'true') {
+            console.log('🔐 Sistema ya inicializado. Se requiere autenticación.');
             return authenticateToken(req, res, next);
         }
-        
-        // Si el sistema no está inicializado, permitir el acceso sin autenticación
+
+        console.log('🆕 Sistema aún no inicializado. Permitiendo acceso sin autenticación.');
         next();
     } catch (error) {
-        console.error('Error en middleware condicional:', error);
+        console.error('🔥 Error en middleware condicional:', error);
         res.status(500).json({ message: 'Error interno del servidor', error: error.message });
     }
 };
